@@ -7,7 +7,7 @@ from email.mime.text import MIMEText
 EMAIL = "karzitachraf8@gmail.com"
 EMAIL_PASSWORD = "ACHRAF1337KA"
 USERNAME_1337 = "hshxhdhbhxhd@gmail.com"
-PASSWORD_1337 = "*e9xgrwf#+GD2&T"
+PASSWORD_1337 = "*9xgrwf#+GD2&T"
 
 MARKER = "De nouveaux creneaux ouvriront"
 LOGIN_URL = "https://admission.1337.ma/users/sign_in"
@@ -35,25 +35,31 @@ def send_alert():
 
 def login():
     session = requests.Session()
+    combinations = [
+        {"user[login]": USERNAME_1337, "user[password]": PASSWORD_1337},
+        {"user[email]": USERNAME_1337, "user[password]": PASSWORD_1337},
+        {"user_email": USERNAME_1337, "user_password": PASSWORD_1337},
+        {"email": USERNAME_1337, "password": PASSWORD_1337},
+        {"login": USERNAME_1337, "password": PASSWORD_1337},
+    ]
     try:
         login_page = session.get(LOGIN_URL, headers=HEADERS, timeout=15)
         token = re.search(r'name="authenticity_token" value="([^"]+)"', login_page.text)
         csrf = token.group(1) if token else ""
-        resp = session.post(LOGIN_URL, data={
-            "user_email": USERNAME_1337,
-            "user_password": PASSWORD_1337,
-            "authenticity_token": csrf,
-            "commit": "Sign in"
-        }, headers={**HEADERS,
-            "Referer": LOGIN_URL,
-            "Content-Type": "application/x-www-form-urlencoded"
-        }, timeout=15, allow_redirects=True)
-        if "sign_in" not in resp.url:
-            print("Logged in!")
-        else:
-            print("Login failed!")
+        for combo in combinations:
+            combo["authenticity_token"] = csrf
+            combo["commit"] = "Sign in"
+            resp = session.post(LOGIN_URL, data=combo,
+                headers={**HEADERS, "Referer": LOGIN_URL,
+                "Content-Type": "application/x-www-form-urlencoded"},
+                timeout=15, allow_redirects=True)
+            if "sign_in" not in resp.url:
+                print(f"Logged in with: {list(combo.keys())[0]}")
+                return session
+            print(f"Failed: {list(combo.keys())[0]}")
     except Exception as e:
         print(f"Login error: {e}")
+    print("All combinations failed!")
     return session
 
 print("Starting 1337 monitor...")
@@ -84,6 +90,3 @@ while True:
     if count % 100 == 0:
         session = login()
     time.sleep(3)
-
-        
-    
