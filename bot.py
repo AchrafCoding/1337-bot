@@ -5,12 +5,11 @@ import re
 from email.mime.text import MIMEText
 
 EMAIL = "karzitachraf8@gmail.com"
-EMAIL_PASSWORD = "ACHRAF1337"
+EMAIL_PASSWORD = "ACHRAF1337."
 USERNAME_1337 = "hshxhdhbhxhd@gmail.com"
-PASSWORD_1337 = "*9xgrwf#+GD2&T
+PASSWORD_1337 = "*9xgrwf#+GD2&T"
 
 MARKER = "Any available Check-ins will appear here"
-
 HEADERS = {
     "User-Agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1",
     "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
@@ -64,7 +63,6 @@ while True:
             headers=HEADERS, timeout=10)
         print(f"Status: {r.status_code}")
         if r.status_code == 200:
-            print(r.text[:500])
             if MARKER not in r.text:
                 print("SLOT FOUND!")
                 send_alert()
