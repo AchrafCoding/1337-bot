@@ -1,20 +1,20 @@
 import requests
 import time
-import os
 import smtplib
+import re
 from email.mime.text import MIMEText
 
-EMAIL = os.environ["EMAIL"]
-EMAIL_PASSWORD = os.environ["EMAIL_PASSWORD"]
-USERNAME_1337 = os.environ["USERNAME_1337"]
-PASSWORD_1337 = os.environ["PASSWORD_1337"]
+EMAIL = "karzitachraf8@gmail.com"
+EMAIL_PASSWORD = "lhpjnplcbvnsbcui"
+USERNAME_1337 = "your1337email@gmail.com"
+PASSWORD_1337 = "your1337password"
+
 MARKER = "Any available Check-ins will appear here"
 
 HEADERS = {
     "User-Agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1",
     "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
     "Accept-Language": "en-US,en;q=0.9",
-    "Accept-Encoding": "gzip, deflate, br",
     "Connection": "keep-alive",
 }
 
@@ -37,7 +37,6 @@ def login():
         login_page = session.get(
             "https://admission.1337.ma/users/sign_in",
             headers=HEADERS, timeout=15)
-        import re
         token = re.search(
             r'name="authenticity_token" value="([^"]+)"',
             login_page.text)
@@ -49,8 +48,7 @@ def login():
                 "user[password]": PASSWORD_1337,
                 "authenticity_token": csrf
             },
-            headers={**HEADERS, "Referer": "https://admission.1337.ma/users/sign_in"},
-            timeout=15)
+            headers=HEADERS, timeout=15)
         print("Logged in!")
     except Exception as e:
         print(f"Login error: {e}")
@@ -73,7 +71,7 @@ while True:
             else:
                 print("No slot yet...")
         elif r.status_code == 403:
-            print("Blocked - re-logging in...")
+            print("Re-logging in...")
             session = login()
     except Exception as e:
         print(f"Error: {e}")
