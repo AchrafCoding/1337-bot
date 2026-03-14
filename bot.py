@@ -65,8 +65,10 @@ while True:
             headers=HEADERS, timeout=10)
         print(f"Status: {r.status_code}")
         if r.status_code == 200:
-            if MARKER not in r.text:
-                print("SLOT FOUND!")
+    print(r.text[:300])  # print first 300 chars
+    if MARKER not in r.text:
+        print("SLOT FOUND!")
+
                 send_alert()
                 time.sleep(30)
             else:
