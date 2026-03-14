@@ -5,9 +5,9 @@ import re
 from email.mime.text import MIMEText
 
 EMAIL = "karzitachraf8@gmail.com"
-EMAIL_PASSWORD = "lhpjnplcbvnsbcui"
-USERNAME_1337 = "PUT_YOUR_1337_EMAIL_HERE"
-PASSWORD_1337 = "PUT_YOUR_1337_PASSWORD_HERE"
+EMAIL_PASSWORD = "ACHRAF1337KA"
+USERNAME_1337 = "hshxhdhbhxhd@gmail.com"
+PASSWORD_1337 = "*e9xgrwf#+GD2&T"
 
 MARKER = "Any available Check-ins will appear here"
 HEADERS = {
