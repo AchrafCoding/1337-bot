@@ -5,9 +5,9 @@ import re
 from email.mime.text import MIMEText
 
 EMAIL = "karzitachraf8@gmail.com"
-EMAIL_PASSWORD = "lhpjnplcbvnsbcui"
-USERNAME_1337 = "your1337email@gmail.com"
-PASSWORD_1337 = "your1337password"
+EMAIL_PASSWORD = "ACHRAF1337"
+USERNAME_1337 = "hshxhdhbhxhd@gmail.com"
+PASSWORD_1337 = "*9xgrwf#+GD2&T
 
 MARKER = "Any available Check-ins will appear here"
 
@@ -20,7 +20,7 @@ HEADERS = {
 
 def send_alert():
     try:
-        msg = MIMEText("GO NOW: https://admission.1337.ma")
+        msg = MIMEText("GO NOW: https://admission.1337.ma/candidature/check-in")
         msg["Subject"] = "1337 SLOT OPEN NOW!"
         msg["From"] = EMAIL
         msg["To"] = EMAIL
@@ -60,21 +60,19 @@ count = 0
 while True:
     try:
         r = session.get(
-"https://admission.1337.ma/candidature/check-in",
-
+            "https://admission.1337.ma/candidature/check-in",
             headers=HEADERS, timeout=10)
         print(f"Status: {r.status_code}")
         if r.status_code == 200:
-    print(r.text[:300])  # print first 300 chars
-    if MARKER not in r.text:
-        print("SLOT FOUND!")
-
+            print(r.text[:500])
+            if MARKER not in r.text:
+                print("SLOT FOUND!")
                 send_alert()
                 time.sleep(30)
             else:
                 print("No slot yet...")
         elif r.status_code == 403:
-            print("Re-logging in...")
+            print("Blocked - re-logging in...")
             session = login()
     except Exception as e:
         print(f"Error: {e}")
