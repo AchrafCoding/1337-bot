@@ -4,7 +4,7 @@ import smtplib
 from email.mime.text import MIMEText
 
 EMAIL = "karzitachraf8@gmail.com"
-EMAIL_PASSWORD = "lhpjnplcbvnsbcui"
+EMAIL_PASSWORD = "ACHRAF1337KA"
 TWITTER_USER = "1337FIL"
 NITTER_URL = f"https://nitter.net/{TWITTER_USER}/rss"
 
