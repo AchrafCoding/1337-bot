@@ -5,9 +5,9 @@ from email.mime.text import MIMEText
 from time import sleep
 
 EMAIL = "karzitachraf8@gmail.com"
-EMAIL_PASSWORD = "lhpjnplcbvnsbcui"
-USERNAME_1337 = "PUT_YOUR_1337_EMAIL"
-PASSWORD_1337 = "PUT_YOUR_1337_PASSWORD"
+EMAIL_PASSWORD = "ACHRAF1337KA"
+USERNAME_1337 = "hshxhdhbhxhd@gmail.com"
+PASSWORD_1337 = "*9xgrwf#+GD2&T"
 
 session = requests.Session()
 
