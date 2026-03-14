@@ -5,7 +5,7 @@ import re
 from email.mime.text import MIMEText
 
 EMAIL = "karzitachraf8@gmail.com"
-EMAIL_PASSWORD = "lhpjnplcbvnsbcui"
+EMAIL_PASSWORD = "ACHRAF1337KA"
 
 NITTER_INSTANCES = [
     "https://nitter.net/1337FIL/rss",
