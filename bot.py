@@ -60,7 +60,8 @@ count = 0
 while True:
     try:
         r = session.get(
-            "https://admission.1337.ma/en/events",
+"https://admission.1337.ma/candidature/check-in",
+
             headers=HEADERS, timeout=10)
         print(f"Status: {r.status_code}")
         if r.status_code == 200:
