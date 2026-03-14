@@ -10,7 +10,8 @@ USERNAME_1337 = "hshxhdhbhxhd@gmail.com"
 PASSWORD_1337 = "*e9xgrwf#+GD2&T"
 
 MARKER = "De nouveaux creneaux ouvriront"
-LOGIN_URL = "https://admission.1337.ma/users/sign_in"
+LOGIN_URL_EN = "https://admission.1337.ma/users/sign_in"
+LOGIN_URL_FR = "https://admission.1337.ma/fr/users/sign_in"
 CHECK_URL = "https://admission.1337.ma/candidature/check-in"
 
 HEADERS = {
@@ -34,21 +35,58 @@ def send_alert():
     except Exception as e:
         print(f"Email error: {e}")
 
+def get_csrf(session, url):
+    page = session.get(url, headers=HEADERS, timeout=15)
+    token = re.search(r'name="authenticity_token" value="([^"]+)"', page.text)
+    return token.group(1) if token else ""
+
 def login():
     session = requests.Session()
     try:
-        login_page = session.get(LOGIN_URL, headers=HEADERS, timeout=15)
-        token = re.search(r'name="authenticity_token" value="([^"]+)"', login_page.text)
-        csrf = token.group(1) if token else ""
-        resp = session.post(LOGIN_URL, data={
+        # Try English login
+        csrf = get_csrf(session, LOGIN_URL_EN)
+        resp = session.post(LOGIN_URL_EN, data={
             "user[login]": USERNAME_1337,
             "user[password]": PASSWORD_1337,
-            "authenticity_token": csrf
+            "authenticity_token": csrf,
+            "commit": "Sign in"
         }, headers=HEADERS, timeout=15, allow_redirects=True)
+
         if "sign_in" not in resp.url:
-            print("Logged in!")
-        else:
-            print("Login failed - retrying...")
+            print("Logged in with English!")
+            return session
+
+        print("English failed, trying French...")
+
+        # Try French login
+        csrf = get_csrf(session, LOGIN_URL_FR)
+        resp = session.post(LOGIN_URL_FR, data={
+            "user[login]": USERNAME_1337,
+            "user[password]": PASSWORD_1337,
+            "authenticity_token": csrf,
+            "commit": "Se connecter"
+        }, headers=HEADERS, timeout=15, allow_redirects=True)
+
+        if "sign_in" not in resp.url:
+            print("Logged in with French!")
+            return session
+
+        # Try with email field instead of login
+        print("Trying email field...")
+        csrf = get_csrf(session, LOGIN_URL_EN)
+        resp = session.post(LOGIN_URL_EN, data={
+            "user[email]": USERNAME_1337,
+            "user[password]": PASSWORD_1337,
+            "authenticity_token": csrf,
+            "commit": "Sign in"
+        }, headers=HEADERS, timeout=15, allow_redirects=True)
+
+        if "sign_in" not in resp.url:
+            print("Logged in with email field!")
+            return session
+
+        print("All login attempts failed!")
+
     except Exception as e:
         print(f"Login error: {e}")
     return session
@@ -56,10 +94,12 @@ def login():
 print("Starting 1337 monitor...")
 session = login()
 count = 0
+
 while True:
     try:
         r = session.get(CHECK_URL, headers=HEADERS, timeout=10)
-        print(f"Status: {r.status_code}")
+        print(f"Status: {r.status_code} | URL: {r.url}")
+
         if r.status_code == 200:
             if "sign_in" in r.url:
                 print("Session expired - re-logging...")
@@ -74,9 +114,15 @@ while True:
             print("Blocked - waiting 30s...")
             time.sleep(30)
             session = login()
+        else:
+            print(f"Unexpected status: {r.status_code}")
+
     except Exception as e:
         print(f"Error: {e}")
+
     count += 1
     if count % 100 == 0:
+        print("Re-logging for fresh session...")
         session = login()
+
     time.sleep(3)
