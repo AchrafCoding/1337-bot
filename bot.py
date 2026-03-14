@@ -62,7 +62,7 @@ while True:
             "https://admission.1337.ma/candidature/check-in",
             headers=HEADERS, timeout=10)
         print(f"Status: {r.status_code}")
-        if r.status_code == 200:
+        status_code == 200:
             if MARKER not in r.text:
                 print("SLOT FOUND!")
                 send_alert()
