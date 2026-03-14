@@ -20,8 +20,14 @@
 
 <script>
 const MARKER = "Any available Check-ins will appear here";
-const URL = "https://api.allorigins.win/raw?url=" + encodeURIComponent("https://admission.1337.ma/candidature/check-in");
 let count = 0;
+let alarmInterval = null;
+
+const PROXIES = [
+  "https://api.allorigins.win/raw?url=",
+  "https://corsproxy.io/?",
+  "https://api.codetabs.com/v1/proxy?quest="
+];
 
 function alarm() {
   try {
@@ -37,29 +43,45 @@ function alarm() {
   } catch(e) {}
 }
 
-async function check() {
-  try {
-    const r = await fetch(URL + "&t=" + Date.now());
-    const html = await r.text();
-    count++;
-    document.getElementById("count").textContent = "Checks: " + count;
-    document.getElementById("time").textContent = new Date().toLocaleTimeString();
+async function tryFetch(proxyIndex) {
+  const url = PROXIES[proxyIndex] + encodeURIComponent("https://admission.1337.ma/candidature/check-in") + "&t=" + Date.now();
+  const r = await fetch(url);
+  if (!r.ok) throw new Error("bad status");
+  return await r.text();
+}
 
-    if (!html.includes(MARKER)) {
-      document.getElementById("status").innerHTML = '<div class="found">🚨 SLOT OPEN! GO NOW!</div>';
-      document.title = "🚨 SLOT OPEN!";
-      alarm();
-      // Keep alarming every 2 seconds
-      setInterval(alarm, 2000);
-    } else {
-      document.getElementById("status").textContent = "✅ Watching... no slot yet";
+async function check() {
+  let html = null;
+  for (let i = 0; i < PROXIES.length; i++) {
+    try {
+      html = await tryFetch(i);
+      break;
+    } catch(e) {
+      continue;
     }
-  } catch(e) {
-    document.getElementById("status").textContent = "⚠️ Error - retrying...";
+  }
+
+  if (!html) {
+    document.getElementById("status").textContent = "⚠️ All proxies failed - retrying...";
+    return;
+  }
+
+  count++;
+  document.getElementById("count").textContent = "Checks: " + count;
+  document.getElementById("time").textContent = new Date().toLocaleTimeString();
+
+  if (!html.includes(MARKER)) {
+    document.getElementById("status").innerHTML = '<div class="found">🚨 SLOT OPEN! GO NOW!</div>';
+    document.title = "🚨 SLOT OPEN!";
+    if (!alarmInterval) {
+      alarm();
+      alarmInterval = setInterval(alarm, 2000);
+    }
+  } else {
+    document.getElementById("status").textContent = "✅ Watching... no slot yet";
   }
 }
 
-// Check every 2 seconds
 check();
 setInterval(check, 2000);
 </script>
