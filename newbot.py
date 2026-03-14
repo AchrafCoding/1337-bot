@@ -1,28 +1,33 @@
 import requests
-import time
-import smtplib
 import re
+import smtplib
 from email.mime.text import MIMEText
+from time import sleep
 
 EMAIL = "karzitachraf8@gmail.com"
-EMAIL_PASSWORD = "ACHRAF1337KA"
-USERNAME_1337 = "hshxhdhbhxhd@gmail.com"
-PASSWORD_1337 = "*9xgrwf#+GD2&T"
+EMAIL_PASSWORD = "lhpjnplcbvnsbcui"
+USERNAME_1337 = "PUT_YOUR_1337_EMAIL"
+PASSWORD_1337 = "PUT_YOUR_1337_PASSWORD"
 
-MARKER = "De nouveaux creneaux ouvriront"
-LOGIN_URL = "https://admission.1337.ma/users/sign_in"
-CHECK_URL = "https://admission.1337.ma/candidature/check-in"
+session = requests.Session()
 
-HEADERS = {
-    "User-Agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1",
-    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-    "Accept-Language": "fr-MA,fr;q=0.9,en;q=0.8",
-    "Connection": "keep-alive",
+HEADERS_GET = {
+    "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+    "accept-language": "fr,en-US;q=0.9,en;q=0.8",
+    "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/100.0.4896.127 Safari/537.36"
+}
+
+HEADERS_POST = {
+    "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8",
+    "Content-Type": "application/x-www-form-urlencoded",
+    "accept-language": "fr,en-US;q=0.9,en;q=0.8",
+    "referer": "https://candidature.1337.ma/users/sign_in",
+    "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/100.0.4896.127 Safari/537.36"
 }
 
 def send_alert():
     try:
-        msg = MIMEText("GO NOW: https://admission.1337.ma/candidature/check-in")
+        msg = MIMEText("GO NOW: https://candidature.1337.ma/meetings")
         msg["Subject"] = "1337 SLOT OPEN NOW!"
         msg["From"] = EMAIL
         msg["To"] = EMAIL
@@ -33,60 +38,78 @@ def send_alert():
     except Exception as e:
         print(f"Email error: {e}")
 
-def login():
-    session = requests.Session()
-    combinations = [
-        {"user[login]": USERNAME_1337, "user[password]": PASSWORD_1337},
-        {"user[email]": USERNAME_1337, "user[password]": PASSWORD_1337},
-        {"user_email": USERNAME_1337, "user_password": PASSWORD_1337},
-        {"email": USERNAME_1337, "password": PASSWORD_1337},
-        {"login": USERNAME_1337, "password": PASSWORD_1337},
-    ]
+def getCSRF():
     try:
-        login_page = session.get(LOGIN_URL, headers=HEADERS, timeout=15)
-        token = re.search(r'name="authenticity_token" value="([^"]+)"', login_page.text)
-        csrf = token.group(1) if token else ""
-        for combo in combinations:
-            combo["authenticity_token"] = csrf
-            combo["commit"] = "Sign in"
-            resp = session.post(LOGIN_URL, data=combo,
-                headers={**HEADERS, "Referer": LOGIN_URL,
-                "Content-Type": "application/x-www-form-urlencoded"},
-                timeout=15, allow_redirects=True)
-            if "sign_in" not in resp.url:
-                print(f"Logged in with: {list(combo.keys())[0]}")
-                return session
-            print(f"Failed: {list(combo.keys())[0]}")
+        response = session.get(
+            "https://candidature.1337.ma/users/sign_in",
+            headers=HEADERS_GET)
+        if response.status_code != 200:
+            print(f"Error: {response.status_code}")
+            return ""
+        result = re.search(r'name="csrf-token" content="(.+?)"', response.text)
+        if result:
+            return result.group(1)
+        return ""
+    except Exception as e:
+        print(f"CSRF error: {e}")
+        sleep(30)
+        return ""
+
+def login(csrf):
+    try:
+        response = session.post(
+            "https://candidature.1337.ma/users/sign_in",
+            data={
+                "utf8": "✓",
+                "authenticity_token": csrf,
+                "user[email]": USERNAME_1337,
+                "user[password]": PASSWORD_1337,
+                "commit": "Se connecter"
+            },
+            headers=HEADERS_POST)
+        if response.url != "https://candidature.1337.ma/meetings":
+            print("Login failed!")
+            return False
+        print("Logged in!")
+        return True
     except Exception as e:
         print(f"Login error: {e}")
-    print("All combinations failed!")
-    return session
+        sleep(30)
+        return False
+
+def checkAvailability():
+    try:
+        response = session.get(
+            "https://candidature.1337.ma/meetings",
+            headers=HEADERS_GET)
+        if response.status_code != 200:
+            print(f"Error: {response.status_code}")
+            return False
+        if response.url != "https://candidature.1337.ma/meetings":
+            print("Not logged in")
+            return False
+        if "places libres" in response.text:
+            return False
+        return True
+    except Exception as e:
+        print(f"Monitor error: {e}")
+        sleep(30)
+        return False
 
 print("Starting 1337 monitor...")
-session = login()
-count = 0
+csrf = getCSRF()
+if csrf == "":
+    print("Error getting CSRF token")
+    exit(1)
+
+if not login(csrf):
+    print("Login failed - check credentials")
+    exit(1)
 
 while True:
-    try:
-        r = session.get(CHECK_URL, headers=HEADERS, timeout=10)
-        print(f"Status: {r.status_code} | URL: {r.url}")
-        if r.status_code == 200:
-            if "sign_in" in r.url:
-                print("Session expired - re-logging...")
-                session = login()
-            elif MARKER not in r.text:
-                print("SLOT FOUND!")
-                send_alert()
-                time.sleep(30)
-            else:
-                print("No slot yet...")
-        elif r.status_code == 403:
-            print("Blocked - waiting 30s...")
-            time.sleep(30)
-            session = login()
-    except Exception as e:
-        print(f"Error: {e}")
-    count += 1
-    if count % 100 == 0:
-        session = login()
-    time.sleep(3)
+    if checkAvailability():
+        print("SLOT FOUND!")
+        send_alert()
+    else:
+        print("No slot yet...")
+    sleep(3)
