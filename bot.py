@@ -3,27 +3,25 @@ import time
 import smtplib
 import re
 from email.mime.text import MIMEText
+from concurrent.futures import ThreadPoolExecutor
 
 EMAIL = "karzitachraf8@gmail.com"
-EMAIL_PASSWORD = "lhpjnplcbvnsbcui"
-USERNAME_1337 = "PUT_YOUR_1337_EMAIL"
-PASSWORD_1337 = "PUT_YOUR_1337_PASSWORD"
+EMAIL_PASSWORD = "ACHRAF1337KA"
 
-MARKER = "De nouveaux creneaux ouvriront"
-LOGIN_URL = "https://admission.1337.ma/users/sign_in"
-CHECK_URL = "https://admission.1337.ma/candidature/check-in"
+NITTER_INSTANCES = [
+    "https://nitter.net/1337FIL/rss",
+    "https://nitter.privacydev.net/1337FIL/rss",
+    "https://nitter.poast.org/1337FIL/rss",
+    "https://nitter.1d4.us/1337FIL/rss",
+    "https://nitter.kavin.rocks/1337FIL/rss",
+]
 
-HEADERS = {
-    "User-Agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1",
-    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-    "Accept-Language": "fr-MA,fr;q=0.9,en;q=0.8",
-    "Connection": "keep-alive",
-}
+last_tweet = ""
 
-def send_alert():
+def send_alert(tweet):
     try:
-        msg = MIMEText("GO NOW: https://admission.1337.ma/candidature/check-in")
-        msg["Subject"] = "1337 SLOT OPEN NOW!"
+        msg = MIMEText(f"1337 just posted:\n\n{tweet}\n\nGO NOW: https://admission.1337.ma/candidature/check-in")
+        msg["Subject"] = "🚨 1337 TWEETED - GO NOW!"
         msg["From"] = EMAIL
         msg["To"] = EMAIL
         with smtplib.SMTP_SSL("smtp.gmail.com", 465) as s:
@@ -33,54 +31,37 @@ def send_alert():
     except Exception as e:
         print(f"Email error: {e}")
 
-def login():
-    session = requests.Session()
+def fetch_from_instance(url):
     try:
-        login_page = session.get(LOGIN_URL, headers=HEADERS, timeout=15)
-        token = re.search(r'name="authenticity_token" value="([^"]+)"', login_page.text)
-        csrf = token.group(1) if token else ""
-        resp = session.post(LOGIN_URL, data={
-            "user_email": USERNAME_1337,
-            "user_password": PASSWORD_1337,
-            "authenticity_token": csrf,
-            "commit": "Sign in"
-        }, headers={**HEADERS,
-            "Referer": LOGIN_URL,
-            "Content-Type": "application/x-www-form-urlencoded"
-        }, timeout=15, allow_redirects=True)
-        if "sign_in" not in resp.url:
-            print("Logged in!")
-        else:
-            print("Login failed!")
-    except Exception as e:
-        print(f"Login error: {e}")
-    return session
-
-print("Starting 1337 monitor...")
-session = login()
-count = 0
-
-while True:
-    try:
-        r = session.get(CHECK_URL, headers=HEADERS, timeout=10)
-        print(f"Status: {r.status_code} | URL: {r.url}")
+        r = requests.get(url, timeout=3,
+            headers={"User-Agent": "Mozilla/5.0"})
         if r.status_code == 200:
-            if "sign_in" in r.url:
-                print("Session expired - re-logging...")
-                session = login()
-            elif MARKER not in r.text:
-                print("SLOT FOUND!")
-                send_alert()
-                time.sleep(30)
-            else:
-                print("No slot yet...")
-        elif r.status_code == 403:
-            print("Blocked - waiting 30s...")
-            time.sleep(30)
-            session = login()
-    except Exception as e:
-        print(f"Error: {e}")
-    count += 1
-    if count % 100 == 0:
-        session = login()
-    time.sleep(3)
+            titles = re.findall(r'<title><!\[CDATA\[(.*?)\]\]></title>', r.text)
+            if titles and len(titles) > 1:
+                return titles[1]
+    except:
+        pass
+    return None
+
+def get_latest_tweet():
+    # Check all instances simultaneously
+    with ThreadPoolExecutor(max_workers=5) as executor:
+        results = list(executor.map(fetch_from_instance, NITTER_INSTANCES))
+    for r in results:
+        if r:
+            return r
+    return None
+
+print("🚀 Watching 1337 Twitter every 1 second...")
+while True:
+    tweet = get_latest_tweet()
+    if tweet and tweet != last_tweet:
+        if last_tweet != "":
+            print(f"🚨 NEW TWEET: {tweet}")
+            send_alert(tweet)
+        else:
+            print(f"✅ Started. Latest: {tweet}")
+        last_tweet = tweet
+    else:
+        print("No new tweet...")
+    time.sleep(1)
